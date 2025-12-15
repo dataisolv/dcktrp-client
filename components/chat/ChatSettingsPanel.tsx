@@ -83,7 +83,7 @@ export default function ChatSettingsPanel({ settings, onSettingsChange }: ChatSe
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="mix">Mix (Recommended)</SelectItem>
+                                    <SelectItem value="mix">Mix</SelectItem>
                                     <SelectItem value="local">Local</SelectItem>
                                     <SelectItem value="global">Global</SelectItem>
                                     <SelectItem value="hybrid">Hybrid</SelectItem>

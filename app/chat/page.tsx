@@ -22,7 +22,7 @@ export default function ChatPage() {
 
     // Chat settings state
     const [settings, setSettings] = useState<ChatSettings>({
-        mode: 'mix',
+        mode: 'global',
         local_k: 5,
         global_k: 10,
         include_references: true,
