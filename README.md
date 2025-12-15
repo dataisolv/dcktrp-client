@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# dcktrp-client
 
-## Getting Started
+A modern chat application built with Next.js that integrates with the dcktrp-rag RAG (Retrieval-Augmented Generation) server.
 
-First, run the development server:
+## Features
+
+- 🔐 **User Authentication** - Secure login and registration
+- 💬 **Real-time Chat** - Streaming responses from RAG system
+- 📝 **Conversation History** - Persistent chat conversations
+- 🎨 **Modern UI** - Built with shadcn/ui components
+- 🌓 **Dark Mode** - Full theme support
+- 📱 **Responsive Design** - Works on all devices
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+ or Bun
+- pnpm (or npm/yarn)
+- dcktrp-rag server running (default: http://localhost:8012)
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Install dependencies
+pnpm install
+
+# Configure environment
+# The .env.local file is already set up with:
+# NEXT_PUBLIC_API_BASE_URL=http://localhost:8012
+# Modify if your server runs on a different port
+
+# Run development server
+pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000` to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Server Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Make sure the dcktrp-rag server is running before using the chat application:
 
-## Learn More
+```bash
+cd ../dcktrp-rag
+# Follow server setup instructions
+# Start the server (usually on port 8012)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+├── app/                    # Next.js app directory
+│   ├── chat/              # Chat page
+│   ├── login/             # Login page
+│   └── register/          # Registration page
+├── components/            # React components
+│   ├── chat/             # Chat-specific components
+│   └── ui/               # shadcn UI components
+├── contexts/             # React contexts
+├── lib/                  # Utilities and API clients
+│   └── api/             # API service functions
+└── types/               # TypeScript type definitions
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage
 
-## Deploy on Vercel
+### 1. Register an Account
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Navigate to `/register` and create a new account.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> **Note**: The registration endpoint requires admin privileges on the server. You may need to create an initial admin user on the server first, or modify the server to allow public registration.
+
+### 2. Login
+
+Use your credentials to log in at `/login`.
+
+### 3. Start Chatting
+
+- Click "New Chat" to create a conversation
+- Type your message and press Enter or click Send
+- Watch the AI response stream in real-time
+- Switch between conversations in the sidebar
+
+## Tech Stack
+
+- **Framework**: Next.js 16
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4
+- **Components**: shadcn/ui
+- **State Management**: React Context
+- **HTTP Client**: Axios
+- **Markdown**: react-markdown
+- **Notifications**: Sonner
+
+## API Integration
+
+The app integrates with these dcktrp-rag endpoints:
+
+- `POST /login` - User authentication
+- `POST /users/` - User registration
+- `GET /users/me` - Get current user
+- `GET /conversations/` - List conversations
+- `POST /conversations/` - Create conversation
+- `GET /conversations/:id/messages` - Get messages
+- `POST /conversations/:id/messages` - Create message
+- `POST /query/stream` - Stream chat responses
+
+## Development
+
+```bash
+# Run dev server
+pnpm run dev
+
+# Build for production
+pnpm run build
+
+# Start production server
+pnpm start
+
+# Lint code
+pnpm run lint
+```
+
+## Environment Variables
+
+Create a `.env.local` file (already created):
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8012
+```
+
+## License
+
+This project is part of the dcktrp system.
