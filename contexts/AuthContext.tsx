@@ -2,18 +2,21 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LoginRequest } from '@/types';
-import { authApi } from '@/lib/api/auth';
-import { usersApi } from '@/lib/api/users';
 import { storage } from '@/lib/utils/storage';
+
+interface User {
+    user_id: string;
+    username?: string;
+    email?: string;
+    full_name?: string;
+}
 
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
-    login: (credentials: LoginRequest) => Promise<void>;
+    setUserId: (userId: string) => Promise<void>;
     logout: () => void;
-    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,48 +29,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isAuthenticated = !!user;
 
     useEffect(() => {
-        // Check for existing token and load user
+        // Check for existing user_id from SSO
         const initAuth = async () => {
-            console.log('AuthContext - Initializing auth...');
-            const token = storage.getToken();
-            console.log('AuthContext - Token from storage:', token ? 'exists' : 'null');
-            if (token) {
-                try {
-                    console.log('AuthContext - Fetching user data...');
-                    const userData = await usersApi.getCurrentUser();
-                    console.log('AuthContext - User data fetched:', userData);
-                    setUser(userData);
-                } catch (error) {
-                    console.error('AuthContext - Failed to load user:', error);
-                    storage.clear();
-                }
+            console.log('🔄 AuthContext - Initializing SSO auth...');
+            const userId = storage.getUserId();
+            console.log('🔄 AuthContext - User ID from storage:', userId || '❌ NULL');
+            
+            if (userId) {
+                // Create user object from stored user_id
+                const userData: User = {
+                    user_id: userId,
+                    username: userId,
+                };
+                console.log('✅ AuthContext - Setting user:', userData);
+                setUser(userData);
+                storage.setUser(userData);
+            } else {
+                console.log('❌ AuthContext - No user_id found in storage');
             }
+            
             setIsLoading(false);
-            console.log('AuthContext - Initialization complete');
+            console.log('✅ AuthContext - Initialization complete, isAuthenticated:', !!userId);
         };
 
         initAuth();
     }, []);
 
-    const login = async (credentials: LoginRequest) => {
+    const setUserId = async (userId: string) => {
         try {
-            console.log('Starting login...');
-            const response = await authApi.login(credentials);
-            console.log('Login response:', response);
-            storage.setToken(response.access_token);
-
-            // Fetch user data
-            console.log('Fetching user data...');
-            const userData = await usersApi.getCurrentUser();
-            console.log('User data:', userData);
+            console.log('🔑 Setting user_id:', userId);
+            
+            // Store user_id (from SSO or manual entry)
+            storage.setUserId(userId);
+            console.log('✅ Saved user_id to localStorage');
+            
+            // Create user object
+            const userData: User = {
+                user_id: userId,
+                username: userId,
+            };
+            
             setUser(userData);
             storage.setUser(userData);
+            console.log('✅ Updated React state with user:', userData);
 
-            console.log('Redirecting to /chat...');
-            // Use window.location for hard navigation to ensure fresh auth check
-            window.location.href = '/chat';
+            console.log('🚀 Redirecting to /chat...');
+            
+            // Use router.push for soft navigation (no page reload)
+            // This ensures the AuthContext state is preserved
+            router.push('/chat');
         } catch (error) {
-            console.error('Login failed:', error);
+            console.error('❌ Set user_id failed:', error);
             throw error;
         }
     };
@@ -78,26 +90,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/login');
     };
 
-    const refreshUser = async () => {
-        try {
-            const userData = await usersApi.getCurrentUser();
-            setUser(userData);
-            storage.setUser(userData);
-        } catch (error) {
-            console.error('Failed to refresh user:', error);
-            throw error;
-        }
-    };
-
     return (
         <AuthContext.Provider
             value={{
                 user,
                 isLoading,
                 isAuthenticated,
-                login,
+                setUserId,
                 logout,
-                refreshUser,
             }}
         >
             {children}

@@ -17,19 +17,19 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         }
     }, [isAuthenticated, isLoading, router]);
 
-    if (isLoading) {
+    // Don't render children until authentication is confirmed
+    // This prevents API calls from being made before user_id is available
+    if (isLoading || !isAuthenticated) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <div className="text-center">
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
+                    <p className="mt-4 text-gray-600 dark:text-gray-300">
+                        {isLoading ? 'Loading...' : 'Redirecting...'}
+                    </p>
                 </div>
             </div>
         );
-    }
-
-    if (!isAuthenticated) {
-        return null;
     }
 
     return <>{children}</>;

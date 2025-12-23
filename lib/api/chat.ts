@@ -11,11 +11,16 @@ export const chatApi = {
         const token = storage.getToken();
 
         try {
-            const response = await fetch('/api/query/stream', {
+            // Get user_id from storage for SSO authentication
+            const userId = storage.getUserId();
+            const apiKey = process.env.NEXT_PUBLIC_RAGSYSTEM_API_KEY || '';
+            
+            const response = await fetch('/query/stream', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : '',
+                    ...(userId ? { 'X-User-ID': userId } : {}),
+                    ...(apiKey ? { 'X-API-Key': apiKey } : {}),
                 },
                 body: JSON.stringify({
                     ...request,

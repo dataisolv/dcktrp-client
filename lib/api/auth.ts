@@ -7,7 +7,7 @@ export const authApi = {
         formData.append('username', credentials.username);
         formData.append('password', credentials.password);
 
-        const response = await apiClient.post<LoginResponse>('/api/auth/login', formData, {
+        const response = await apiClient.post<LoginResponse>('/login', formData, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },

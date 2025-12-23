@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,28 +9,37 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from 'sonner';
 
 export default function LoginPage() {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    const [userId, setUserId] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
-    const router = useRouter();
+    const { setUserId: setAuthUserId } = useAuth();
+
+    // Auto-generate a temporary user_id if none exists
+    useEffect(() => {
+        const storedUserId = localStorage.getItem('sso_user_id');
+        if (storedUserId) {
+            setUserId(storedUserId);
+        } else {
+            // Generate a unique user_id for testing
+            const tempUserId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            setUserId(tempUserId);
+        }
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!username || !password) {
-            toast.error('Please fill in all fields');
+        if (!userId || userId.trim() === '') {
+            toast.error('Please enter a valid user ID');
             return;
         }
 
         setIsLoading(true);
         try {
-            await login({ username, password });
+            await setAuthUserId(userId.trim());
             toast.success('Login successful!');
         } catch (error: any) {
             const errorMessage = error.response?.data?.detail || error.message || 'Login failed';
             toast.error(errorMessage);
-        } finally {
             setIsLoading(false);
         }
     };
@@ -42,49 +49,38 @@ export default function LoginPage() {
             <Card className="w-full max-w-md shadow-2xl">
                 <CardHeader className="space-y-2 text-center">
                     <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        Welcome Back
+                        Welcome
                     </CardTitle>
                     <CardDescription className="text-base">
-                        Sign in to continue to Chat Page
+                        Enter your User ID to continue
                     </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-5">
                         <div className="space-y-2">
-                            <Label htmlFor="username" className="text-sm font-medium">
-                                Username
+                            <Label htmlFor="userId" className="text-sm font-medium">
+                                User ID
                             </Label>
                             <Input
-                                id="username"
+                                id="userId"
                                 type="text"
-                                placeholder="Enter your username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Enter your SSO User ID"
+                                value={userId}
+                                onChange={(e) => setUserId(e.target.value)}
                                 disabled={isLoading}
-                                className="h-11"
+                                className="h-11 font-mono"
                                 autoComplete="username"
+                                autoFocus
                             />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password" className="text-sm font-medium">
-                                Password
-                            </Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="Enter your password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={isLoading}
-                                className="h-11"
-                                autoComplete="current-password"
-                            />
+                            <p className="text-xs text-gray-500">
+                                In production, this will be provided by your SSO system.
+                            </p>
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4">
                         <Button
                             type="submit"
-                            className="mt-4 w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                            className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                             disabled={isLoading}
                         >
                             {isLoading ? (
@@ -93,17 +89,11 @@ export default function LoginPage() {
                                     Signing in...
                                 </div>
                             ) : (
-                                'Sign In'
+                                'Continue'
                             )}
                         </Button>
-                        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-                            Don&apos;t have an account?{' '}
-                            <Link
-                                href="/register"
-                                className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                            >
-                                Create one
-                            </Link>
+                        <p className="text-center text-xs text-gray-500">
+                            Your user_id will be sent to the RAG system via X-User-ID header
                         </p>
                     </CardFooter>
                 </form>

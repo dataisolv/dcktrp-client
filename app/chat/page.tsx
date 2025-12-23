@@ -30,7 +30,7 @@ export default function ChatPage() {
         access_filter: ['external'], // Default to external
     });
 
-    // Load conversations on mount
+    // Load conversations on mount (only after ProtectedRoute confirms auth)
     useEffect(() => {
         loadConversations();
     }, []);
