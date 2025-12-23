@@ -110,40 +110,29 @@ export default function ChatPage() {
     };
 
     const handleSendMessage = async (content: string) => {
-        if (!currentConversationId) {
-            // Create new conversation if none exists
-            try {
-                const newConversation = await conversationsApi.createConversation();
-                setConversations([newConversation, ...conversations]);
-                setCurrentConversationId(newConversation.id);
-
-                // Continue with sending the message
-                await sendMessage(newConversation.id, content);
-            } catch (error: any) {
-                console.error('Failed to create conversation:', error);
-                toast.error('Failed to create conversation');
-            }
-        } else {
-            await sendMessage(currentConversationId, content);
-        }
+        // Server will auto-create conversation if needed
+        await sendMessage(currentConversationId, content);
     };
 
-    const sendMessage = async (conversationId: number, content: string) => {
+    const sendMessage = async (conversationId: number | null, content: string) => {
         try {
             setIsSending(true);
 
-            // Create user message
-            const userMessage = await conversationsApi.createMessage(
-                conversationId,
-                'user',
-                content
-            );
-            setMessages((prev) => [...prev, userMessage]);
+            // Add user message to UI immediately (optimistic update)
+            const optimisticUserMessage: Message = {
+                id: Date.now(),
+                conversation_id: conversationId || 0,
+                role: 'user',
+                content: content,
+                created_at: new Date().toISOString(),
+                metadata: {},
+            };
+            setMessages((prev) => [...prev, optimisticUserMessage]);
 
             // Initialize streaming assistant message
             const tempAssistantMessage: Message = {
-                id: Date.now(), // Temporary ID
-                conversation_id: conversationId,
+                id: Date.now() + 1,
+                conversation_id: conversationId || 0,
                 role: 'assistant',
                 content: '',
                 created_at: new Date().toISOString(),
@@ -152,8 +141,9 @@ export default function ChatPage() {
             setStreamingMessage(tempAssistantMessage);
 
             let fullResponse = '';
+            let returnedConversationId = conversationId;
 
-            // Stream the response
+            // Stream the response (server handles message persistence)
             await chatApi.streamQuery(
                 {
                     query: content,
@@ -162,6 +152,7 @@ export default function ChatPage() {
                     include_references: settings.include_references,
                     local_k: settings.local_k,
                     global_k: settings.global_k,
+                    conversation_id: conversationId || undefined,
                     ...(settings.division_filter.length > 0 ? { division_filter: settings.division_filter } : {}),
                     ...(settings.access_filter.length > 0 ? { access_filter: settings.access_filter } : {}),
                     conversation_history: messages.slice(-3).map((m) => ({
@@ -170,6 +161,12 @@ export default function ChatPage() {
                     })),
                 },
                 (chunk) => {
+                    // Handle conversation_id from server (auto-created)
+                    if (chunk.conversation_id && !returnedConversationId) {
+                        returnedConversationId = chunk.conversation_id;
+                        setCurrentConversationId(chunk.conversation_id);
+                    }
+                    
                     if (chunk.response) {
                         fullResponse += chunk.response;
                         setStreamingMessage({
@@ -184,27 +181,16 @@ export default function ChatPage() {
                     setStreamingMessage(null);
                 },
                 async () => {
-                    // Save assistant message to conversation
-                    try {
-                        const assistantMessage = await conversationsApi.createMessage(
-                            conversationId,
-                            'assistant',
-                            fullResponse
-                        );
-                        setMessages((prev) => [...prev, assistantMessage]);
-                        setStreamingMessage(null);
-
-                        // Update conversation title if it's the first message
-                        const conv = conversations.find((c) => c.id === conversationId);
-                        if (conv && !conv.title) {
-                            const title = content.substring(0, 50) + (content.length > 50 ? '...' : '');
-                            await conversationsApi.updateConversation(conversationId, title);
-                            setConversations((prev) =>
-                                prev.map((c) => (c.id === conversationId ? { ...c, title } : c))
-                            );
-                        }
-                    } catch (error) {
-                        console.error('Failed to save assistant message:', error);
+                    // Streaming complete - finalize UI
+                    setStreamingMessage(null);
+                    
+                    // Small delay to ensure server has saved messages
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Reload conversation list to get updated data
+                    if (returnedConversationId) {
+                        await loadConversations();
+                        await loadMessages(returnedConversationId);
                     }
                 }
             );

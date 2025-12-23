@@ -2,14 +2,16 @@ import { QueryRequest, StreamChunk } from '@/types';
 import { storage } from '../utils/storage';
 
 export const chatApi = {
+    /**
+     * Stream a query to the RAG system with automatic conversation management
+     * The server will automatically create a conversation if not provided and save messages
+     */
     async streamQuery(
         request: QueryRequest,
         onChunk: (chunk: StreamChunk) => void,
         onError: (error: string) => void,
         onComplete: () => void
     ): Promise<void> {
-        const token = storage.getToken();
-
         try {
             // Get user_id from storage for SSO authentication
             const userId = storage.getUserId();

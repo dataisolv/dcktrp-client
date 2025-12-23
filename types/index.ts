@@ -52,6 +52,7 @@ export interface StreamChunk {
     file_path: string;
   }>;
   inferred_filters?: string[];
+  conversation_id?: number;
   response?: string;
   error?: string;
 }
@@ -63,6 +64,7 @@ export interface QueryRequest {
   include_references?: boolean;
   local_k?: number;
   global_k?: number;
+  conversation_id?: number;
   conversation_history?: Array<{
     role: string;
     content: string;
