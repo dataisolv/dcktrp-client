@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { Conversation } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { PlusCircle, MessageSquare, Trash2, LogOut, ChevronLeft, ChevronRight } 
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+
 
 interface ConversationSidebarProps {
     conversations: Conversation[];
@@ -19,7 +20,7 @@ interface ConversationSidebarProps {
     isLoading?: boolean;
 }
 
-export default function ConversationSidebar({
+const ConversationSidebar = memo(function ConversationSidebar({
     conversations,
     currentConversationId,
     onSelectConversation,
@@ -170,4 +171,6 @@ export default function ConversationSidebar({
             </div>
         </div>
     );
-}
+});
+
+export default ConversationSidebar;
