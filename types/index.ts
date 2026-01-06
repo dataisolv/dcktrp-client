@@ -24,6 +24,12 @@ export interface Message {
   content: string;
   created_at: string;
   metadata: Record<string, any>;
+  // File metadata from database (populated from metadata.files)
+  fileMetadata?: Array<{
+    name: string;
+    type: string;
+    size?: number;
+  }>;
 }
 
 export interface LoginRequest {

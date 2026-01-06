@@ -67,7 +67,19 @@ export default function ChatPage() {
         try {
             setIsLoadingMessages(true);
             const data = await conversationsApi.getMessages(conversationId);
-            setMessages(data);
+            // Transform messages to extract fileMetadata from metadata.files
+            const transformedMessages = data.map(msg => ({
+                ...msg,
+                fileMetadata: msg.metadata?.files || undefined
+            }));
+            setMessages(transformedMessages);
+
+            // Load conversation settings from metadata
+            const conversation = conversations.find(c => c.id === conversationId);
+            if (conversation?.metadata?.chatSettings) {
+                console.log('Loading saved settings for conversation:', conversation.metadata.chatSettings);
+                setSettings(conversation.metadata.chatSettings);
+            }
         } catch (error: any) {
             console.error('Failed to load messages:', error);
             toast.error('Failed to load messages');
@@ -80,6 +92,15 @@ export default function ChatPage() {
         // Don't create conversation yet - let the first message create it with proper title
         setCurrentConversationId(null);
         setMessages([]);
+        // Reset settings to defaults for new conversation
+        setSettings({
+            mode: 'global',
+            local_k: 5,
+            global_k: 10,
+            include_references: true,
+            division_filter: [],
+            access_filter: ['external'],
+        });
         toast.success('Start typing to begin a new conversation');
     };
 
@@ -194,12 +215,30 @@ export default function ChatPage() {
 
                         // Update messages with the complete assistant response
                         setMessages((prev) => [...prev, finalAssistantMessage]);
-                        setStreamingMessage(null);
+                        setStreamingMessage(null); // Clear streaming message to avoid duplicates
 
-                        // If a new conversation was created, refresh the sidebar to show it
-                        // This updates conversation list title and timestamp without reloading messages
-                        if (!conversationId) {
-                            await loadConversations();
+                        // Update conversation ID if it was auto-created
+                        if (!conversationId && returnedConversationId) {
+                            setCurrentConversationId(returnedConversationId);
+
+                            // Save current settings to the newly created conversation
+                            const settingsToSave = files && files.length > 0
+                                ? { ...settings, mode: 'bypass' as const } // Persist bypass mode for multimodal conversations
+                                : settings;
+
+                            try {
+                                await conversationsApi.updateConversation(
+                                    returnedConversationId,
+                                    undefined, // title (keep existing)
+                                    { chatSettings: settingsToSave } // metadata
+                                );
+                                console.log('Saved settings to new conversation:', settingsToSave);
+                            } catch (error) {
+                                console.error('Failed to save settings to conversation:', error);
+                            }
+
+                            // Reload conversations to include the new one
+                            loadConversations();
                         }
                     } else {
                         // No conversation created, just clear streaming message

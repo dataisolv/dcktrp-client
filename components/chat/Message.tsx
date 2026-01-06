@@ -54,8 +54,22 @@ export default function Message({ message, isStreaming }: MessageProps) {
             cleanContent = cleanContent.replace(match[0], '');
         }
 
+        // Also include fileMetadata from database (if available)
+        if (message.fileMetadata && message.fileMetadata.length > 0) {
+            message.fileMetadata.forEach(file => {
+                // Only add if not already extracted from content
+                const alreadyExists = attachments.some(a => a.name === file.name);
+                if (!alreadyExists) {
+                    attachments.push({
+                        type: file.type.startsWith('image/') ? 'image' : 'pdf',
+                        name: file.name
+                    });
+                }
+            });
+        }
+
         return { cleanContent: cleanContent.trim(), attachments };
-    }, [message.content]);
+    }, [message.content, message.fileMetadata]);
 
     return (
         <div
