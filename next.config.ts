@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
         source: '/graphs/:path*',
         destination: `${backendUrl}/graphs/:path*`,
       },
+      {
+        source: '/files/:path*',
+        destination: `${backendUrl}/files/:path*`,
+      },
     ];
 
     console.log('📡 Configured rewrites:', rewrites.length, 'rules');

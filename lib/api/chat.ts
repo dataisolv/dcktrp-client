@@ -11,7 +11,7 @@ export const chatApi = {
      * The server will automatically create a conversation if not provided and save messages
      * Supports file attachments (images, PDFs, text files)
      * 
-     * Note: File attachments bypass the Next.js proxy and call the backend directly
+     * Note: File attachments are now proxied to prevent Mixed Content errors
      */
     async streamQuery(
         request: QueryRequest,
@@ -48,7 +48,8 @@ export const chatApi = {
                 });
 
                 body = formData;
-                url = `${getBackendUrl()}/query/stream`;
+                body = formData;
+                url = '/query/stream'; // Use proxy for files too to avoid Mixed Content errors
                 // Note: Don't set Content-Type header for FormData, browser will set it with boundary
             } else {
                 // Use JSON for text-only queries through proxy
@@ -130,7 +131,7 @@ export const chatApi = {
         });
 
         const response = await fetch(
-            `${getBackendUrl()}/files/signed-url?${params.toString()}`,
+            `/files/signed-url?${params.toString()}`,
             {
                 method: 'GET',
                 headers: {
